@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>7天天气预报</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --shadow: 0 10px 30px rgba(37, 99, 235, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 32px 18px 48px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 34px;
+      letter-spacing: 0.5px;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid rgba(229, 231, 235, 0.9);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    input {
+      width: 100%;
+      height: 52px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0 16px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: #fff;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    }
+
+    button {
+      height: 52px;
+      border: none;
+      border-radius: 14px;
+      padding: 0 20px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.08s ease, opacity 0.2s ease;
+    }
+
+    button:hover { opacity: 0.95; }
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: 0.6; cursor: wait; }
+
+    .status {
+      min-height: 24px;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .location {
+      display: none;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: var(--accent-soft);
+      border: 1px solid #dbeafe;
+      flex-wrap: wrap;
+    }
+
+    .location.active { display: flex; }
+
+    .location .title {
+      font-size: 21px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .location .meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px 12px;
+      text-align: center;
+      min-height: 188px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .day {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .date {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .icon {
+      font-size: 32px;
+      line-height: 1;
+      margin: 8px 0;
+    }
+
+    .desc {
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 20px;
+    }
+
+    .temps {
+      margin-top: 10px;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .temps span {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 500;
+      margin-left: 6px;
+    }
+
+    .extras {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 18px;
+    }
+
+    @media (max-width: 920px) {
+      .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 640px) {
+      .wrap { padding-top: 22px; }
+      .hero h1 { font-size: 28px; }
+      .search-row { grid-template-columns: 1fr; }
+      .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 420px) {
+      .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>未来 7 天天气预报</h1>
+      <p>输入城市名称，立即查看未来 7 天温度、降水概率和风速</p>
+    </div>
+
+    <div class="panel">
+      <div class="search-row">
+        <input id="cityInput" type="text" placeholder="例如：北京、上海、Tokyo、New York" value="北京" />
+        <button id="searchBtn">查询天气</button>
+      </div>
+
+      <div id="status" class="status">已默认填入“北京”，点击即可查看。</div>
+
+      <div id="locationBox" class="location">
+        <div>
+          <div id="locationTitle" class="title"></div>
+          <div id="locationMeta" class="meta"></div>
+        </div>
+        <div id="updatedAt" class="meta"></div>
+      </div>
+
+      <div id="cards" class="cards"></div>
+      <div class="footer">天气数据来源：Open-Meteo（无需 API Key）</div>
+    </div>
+  </div>
+
+  <script>
+    const cityInput = document.getElementById('cityInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const statusEl = document.getElementById('status');
+    const cardsEl = document.getElementById('cards');
+    const locationBox = document.getElementById('locationBox');
+    const locationTitle = document.getElementById('locationTitle');
+    const locationMeta = document.getElementById('locationMeta');
+    const updatedAt = document.getElementById('updatedAt');
+
+    const weatherCodeMap = {
+      0: ['☀️', '晴朗'],
+      1: ['🌤️', '大部晴朗'],
+      2: ['⛅', '局部多云'],
+      3: ['☁️', '阴天'],
+      45: ['🌫️', '有雾'],
+      48: ['🌫️', '冻雾'],
+      51: ['🌦️', '毛毛雨'],
+      53: ['🌦️', '小雨'],
+      55: ['🌧️', '中雨'],
+      56: ['🌧️', '冻毛雨'],
+      57: ['🌧️', '冻雨'],
+      61: ['🌦️', '小雨'],
+      63: ['🌧️', '中雨'],
+      65: ['🌧️', '大雨'],
+      66: ['🌧️', '冻雨'],
+      67: ['🌧️', '强冻雨'],
+      71: ['🌨️', '小雪'],
+      73: ['❄️', '中雪'],
+      75: ['❄️', '大雪'],
+      77: ['🌨️', '冰粒'],
+      80: ['🌦️', '阵雨'],
+      81: ['🌧️', '较强阵雨'],
+      82: ['⛈️', '强阵雨'],
+      85: ['🌨️', '阵雪'],
+      86: ['❄️', '强阵雪'],
+      95: ['⛈️', '雷暴'],
+      96: ['⛈️', '雷暴夹冰雹'],
+      99: ['⛈️', '强雷暴夹冰雹']
+    };
+
+    function setStatus(text, isError = false) {
+      statusEl.textContent = text;
+      statusEl.style.color = isError ? '#dc2626' : '#6b7280';
+    }
+
+    function formatWeekday(dateStr) {
+      const date = new Date(dateStr + 'T00:00:00');
+      return ['周日','周一','周二','周三','周四','周五','周六'][date.getDay()];
+    }
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr + 'T00:00:00');
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      return `${month}月${day}日`;
+    }
+
+    function renderCards(daily) {
+      cardsEl.innerHTML = '';
+      daily.time.forEach((dateStr, i) => {
+        const code = daily.weather_code[i];
+        const [icon, desc] = weatherCodeMap[code] || ['🌈', '未知天气'];
+        const max = Math.round(daily.temperature_2m_max[i]);
+        const min = Math.round(daily.temperature_2m_min[i]);
+        const rain = daily.precipitation_probability_max[i] ?? 0;
+        const wind = Math.round(daily.wind_speed_10m_max[i] ?? 0);
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div>
+            <div class="day">${formatWeekday(dateStr)}</div>
+            <div class="date">${formatDate(dateStr)}</div>
+            <div class="icon">${icon}</div>
+            <div class="desc">${desc}</div>
+          </div>
+          <div>
+            <div class="temps">${max}°<span>${min}°</span></div>
+            <div class="extras">
+              降水概率：${rain}%<br />
+              最大风速：${wind} km/h
+            </div>
+          </div>
+        `;
+        cardsEl.appendChild(card);
+      });
+    }
+
+    async function searchWeather() {
+      const city = cityInput.value.trim();
+      if (!city) {
+        setStatus('请输入城市名称。', true);
+        return;
+      }
+
+      searchBtn.disabled = true;
+      setStatus(`正在查询“${city}”的天气...`);
+      cardsEl.innerHTML = '';
+      locationBox.classList.remove('active');
+
+      try {
+        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=zh&format=json`;
+        const geoRes = await fetch(geoUrl);
+        const geoData = await geoRes.json();
+
+        if (!geoData.results || !geoData.results.length) {
+          throw new Error('没有找到这个城市，请换个名称试试。');
+        }
+
+        const place = geoData.results[0];
+        const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=7`;
+        const forecastRes = await fetch(forecastUrl);
+        const forecastData = await forecastRes.json();
+
+        if (!forecastData.daily || !forecastData.daily.time) {
+          throw new Error('天气数据读取失败，请稍后重试。');
+        }
+
+        locationTitle.textContent = `${place.name}${place.admin1 ? ' · ' + place.admin1 : ''}`;
+        locationMeta.textContent = `${place.country || ''} · 纬度 ${place.latitude.toFixed(2)} / 经度 ${place.longitude.toFixed(2)}`;
+        updatedAt.textContent = `时区：${forecastData.timezone || '自动'}`;
+        locationBox.classList.add('active');
+
+        renderCards(forecastData.daily);
+        setStatus(`已为你显示“${city}”未来 7 天的天气。`);
+      } catch (err) {
+        setStatus(err.message || '查询失败，请稍后再试。', true);
+      } finally {
+        searchBtn.disabled = false;
+      }
+    }
+
+    searchBtn.addEventListener('click', searchWeather);
+    cityInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') searchWeather();
+    });
+
+    searchWeather();
+  </script>
+</body>
+</html>
